@@ -1592,7 +1592,67 @@ function markShared() {
   retryBtn.disabled = false;
 }
 
-// Web Share API (mobile native)
+/* ── Platform detection ── */
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
+}
+function isIOS() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+function isAndroid() {
+  return /Android/i.test(navigator.userAgent);
+}
+
+/* ── URL scheme opener with fallback ── */
+function tryOpenApp(schemeUrl, fallbackUrl, timeoutMs) {
+  timeoutMs = timeoutMs || 800;
+  var start = Date.now();
+  var iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = schemeUrl;
+  document.body.appendChild(iframe);
+
+  var timer = setTimeout(function () {
+    // If we're still on this page after timeout, scheme failed → open fallback
+    if (Date.now() - start < timeoutMs + 200) {
+      if (fallbackUrl) {
+        window.open(fallbackUrl, '_blank');
+      }
+    }
+    document.body.removeChild(iframe);
+  }, timeoutMs);
+
+  // Cleanup on blur (app opened successfully)
+  var onBlur = function () {
+    clearTimeout(timer);
+    setTimeout(function () {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    }, 100);
+    window.removeEventListener('blur', onBlur);
+  };
+  window.addEventListener('blur', onBlur);
+}
+
+/* ── Clipboard helper ── */
+function copyShareText() {
+  var shareText = SHARE_CONFIG.title + '\n' + SHARE_CONFIG.text + '\n' + SHARE_CONFIG.url;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(shareText).catch(function () {});
+  }
+  // Fallback for older browsers
+  var ta = document.createElement('textarea');
+  ta.value = shareText;
+  ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+/* ── Web Share API (native share sheet) ── */
 async function shareNative() {
   try {
     if (navigator.share) {
@@ -1603,22 +1663,18 @@ async function shareNative() {
       });
       markShared();
     } else {
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(
-        `${SHARE_CONFIG.title}\n${SHARE_CONFIG.text}\n${SHARE_CONFIG.url}`
-      );
+      await copyShareText();
       alert('링크가 클립보드에 복사되었습니다! 친구에게 공유해주세요.');
       markShared();
     }
   } catch(e) {
-    // User cancelled share
     console.log('Share cancelled:', e);
   }
 }
 
-// KakaoTalk
+/* ── KakaoTalk ── */
 function shareKakao() {
-  // Check if Kakao SDK is loaded
+  // 1) Kakao SDK (web)
   if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
     Kakao.Share.sendDefault({
       objectType: 'feed',
@@ -1631,40 +1687,71 @@ function shareKakao() {
       buttons: [{ title: '좀비트레인 체험하기', link: { webUrl: SHARE_CONFIG.url, mobileWebUrl: SHARE_CONFIG.url } }]
     });
     markShared();
-  } else {
-    // Fallback: copy + open KakaoTalk
-    copyAndOpen('카카오톡');
+    return;
   }
+
+  // 2) Mobile: try kakaotalk:// URL scheme
+  if (isMobile()) {
+    var encodedText = encodeURIComponent(SHARE_CONFIG.text);
+    var encodedUrl = encodeURIComponent(SHARE_CONFIG.url);
+    // kakaotalk://send/link is the most reliable scheme
+    var kakaotalkScheme = 'kakaotalk://send/link?text=' + encodedText + '&url=' + encodedUrl;
+    var storeUrl = isIOS()
+      ? 'https://apps.apple.com/kr/app/%EC%B9%B4%EC%B9%B4%EC%98%A4%ED%86%A1/id362057947'
+      : 'https://play.google.com/store/apps/details?id=com.kakao.talk';
+
+    copyShareText().then(function () {
+      tryOpenApp(kakaotalkScheme, storeUrl, 600);
+      markShared();
+    });
+    return;
+  }
+
+  // 3) Desktop fallback
+  copyShareText().then(function () {
+    alert('링크가 클립보드에 복사되었습니다!\n카카오톡에 붙여넣기 해주세요.');
+    markShared();
+  });
 }
 
-// Facebook
+/* ── Facebook ── */
 function shareFacebook() {
-  const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_CONFIG.url)}&quote=${encodeURIComponent(SHARE_CONFIG.text)}`;
-  window.open(fbUrl, '_blank', 'width=600,height=400');
+  var fbWebUrl = 'https://www.facebook.com/sharer/sharer.php?u='
+    + encodeURIComponent(SHARE_CONFIG.url)
+    + '&quote=' + encodeURIComponent(SHARE_CONFIG.text);
+
+  if (isMobile()) {
+    // Try fb:// scheme first
+    var fbScheme = 'fb://facewebmodal/f?href=' + encodeURIComponent(SHARE_CONFIG.url);
+    var storeUrl = isIOS()
+      ? 'https://apps.apple.com/app/facebook/id284882215'
+      : 'https://play.google.com/store/apps/details?id=com.facebook.katana';
+
+    tryOpenApp(fbScheme, fbWebUrl, 600);
+  } else {
+    window.open(fbWebUrl, '_blank', 'width=600,height=400');
+  }
   markShared();
 }
 
-// Instagram (copy link + guide)
-async function shareInstagram() {
-  try {
-    await navigator.clipboard.writeText(
-      `${SHARE_CONFIG.title}\n${SHARE_CONFIG.text}\n${SHARE_CONFIG.url}`
-    );
-    alert('링크가 클립보드에 복사되었습니다!\n인스타그램 스토리에 붙여넣기 해주세요.');
-    markShared();
-  } catch(e) {
-    alert('공유에 실패했습니다. 다시 시도해주세요.');
-  }
-}
+/* ── Instagram ── */
+function shareInstagram() {
+  copyShareText().then(function () {
+    if (isMobile()) {
+      // Instagram doesn't accept pre-filled content, but we can open the app
+      var igScheme = 'instagram://';
+      var storeUrl = isIOS()
+        ? 'https://apps.apple.com/app/instagram/id389801252'
+        : 'https://play.google.com/store/apps/details?id=com.instagram.android';
 
-function copyAndOpen(platform) {
-  navigator.clipboard.writeText(
-    `${SHARE_CONFIG.title}\n${SHARE_CONFIG.text}\n${SHARE_CONFIG.url}`
-  ).then(() => {
-    alert(`링크가 클립보드에 복사되었습니다!\n${platform}에 붙여넣기 해주세요.`);
+      tryOpenApp(igScheme, storeUrl, 600);
+      // Brief toast-like notification
+      alert('텍스트가 클립보드에 복사되었습니다!\n인스타그램 앱에서 붙여넣기 해주세요.');
+    } else {
+      window.open('https://www.instagram.com/', '_blank');
+      alert('텍스트가 클립보드에 복사되었습니다!\n인스타그램에 붙여넣기 해주세요.');
+    }
     markShared();
-  }).catch(() => {
-    alert('공유에 실패했습니다. 다시 시도해주세요.');
   });
 }
 
