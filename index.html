@@ -428,6 +428,12 @@ html, body {
   background: #b30000;
   box-shadow: 0 0 8px rgba(179,0,0,0.8), 0 0 16px rgba(139,0,0,0.4);
 }
+.progress-dot.current {
+  background: #ff3333;
+  box-shadow: 0 0 12px rgba(255,51,51,1), 0 0 24px rgba(179,0,0,0.8);
+  animation: pulse 1.5s infinite;
+  transform: scale(1.6);
+}
 
 /* Replay stats */
 .replay-stats {
@@ -550,7 +556,6 @@ html, body {
 .jumpscare {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90;
   pointer-events: none; opacity: 0;
-  background-image: url('assets/images/jumpscare-zombie.png');
   background-size: cover; background-position: center; background-repeat: no-repeat;
   transition: opacity 0.03s ease;
 }
@@ -609,11 +614,11 @@ html, body {
 <body>
 
 <!-- Background Image Frames -->
-<div class="bg-image-frame" id="bg-train" style="background-image: url('assets/images/bg-train-interior.jpg'), url('https://images.unsplash.com/photo-1474486858533-2016a5e3b4b9?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-train" style="background-image: url('https://images.unsplash.com/photo-1474486858533-2016a5e3b4b9?w=800&q=60');"></div>
 <div class="bg-image-frame" id="bg-forest" style="background-image: url('assets/images/bg-forest-night.jpg'), url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=60');"></div>
-<div class="bg-image-frame" id="bg-tunnel" style="background-image: url('assets/images/bg-deep-forest.jpg'), url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=60');"></div>
-<div class="bg-image-frame" id="bg-station" style="background-image: url('assets/images/bg-safe-zone.jpg'), url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=60');"></div>
-<div class="bg-image-frame" id="bg-swamp" style="background-image: url('assets/images/bg-forest-swamp.jpg'), url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-tunnel" style="background-image: url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-station" style="background-image: url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-swamp" style="background-image: url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=800&q=60');"></div>
 <div class="bg-image-frame" id="bg-cabin" style="background-image: url('assets/images/bg-final-crisis.jpg'), url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60');"></div>
 <div class="bg-image-frame" id="bg-escape" style="background-image: url('assets/images/bg-escape-rescue.jpg'), url('https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=800&q=60');"></div>
 
@@ -1295,8 +1300,7 @@ const muteToggle = $('#muteToggle');
 let bgmAudio = null;
 try {
   bgmAudio = new Audio();
-  // Placeholder — replace with actual audio file when available
-  // bgmAudio.src = 'assets/audio/horror-ambient.mp3';
+  bgmAudio.src = 'bgm-horror-ambient.mp3';
   bgmAudio.loop = true;
   bgmAudio.volume = 0.3;
 } catch(e) { /* audio not supported */ }
@@ -1355,16 +1359,26 @@ function triggerJumpscare(imagePath) {
 }
 
 /* ============================================================
-   PROGRESS DOTS
+   PROGRESS DOTS (8-stage story path)
    ============================================================ */
+const STORY_PATH = ['start', 'askSoldier', 'fleeWithSoldier', 'forestChase', 'deepForest', 'dodgeZombie', 'finalCrisis', 'finalEscape'];
+
 function updateProgressDots() {
-  const totalScenes = Object.keys(SCENES).length;
-  const visitedCount = gameState.history.length;
+  const totalStages = STORY_PATH.length;
+  // Find current scene index in story path
+  let currentIdx = -1;
+  if (gameState.currentScene) {
+    currentIdx = STORY_PATH.indexOf(gameState.currentScene);
+  }
   progressDots.innerHTML = '';
-  for (let i = 0; i < Math.min(totalScenes, 20); i++) {
+  for (let i = 0; i < totalStages; i++) {
     const dot = document.createElement('span');
     dot.className = 'progress-dot';
-    if (i < visitedCount) dot.classList.add('visited');
+    if (i < currentIdx) {
+      dot.classList.add('visited');
+    } else if (i === currentIdx) {
+      dot.classList.add('visited', 'current');
+    }
     progressDots.appendChild(dot);
   }
 }
@@ -1448,11 +1462,11 @@ function renderScene(sceneId) {
 
     // Trigger jumpscare for key zombie appearance scenes
     if (sceneId === 'askSoldier') {
-      setTimeout(() => triggerJumpscare('assets/images/jumpscare-train.png'), 800);
+      setTimeout(() => triggerJumpscare('assets/images/jumpscare-train.jpg'), 800);
     } else if (sceneId === 'deepForest') {
-      setTimeout(() => triggerJumpscare('assets/images/jumpscare-forest.png'), 1000);
+      setTimeout(() => triggerJumpscare('assets/images/jumpscare-train.jpg'), 1000);
     } else if (sceneId === 'finalCrisis') {
-      setTimeout(() => triggerJumpscare('assets/images/jumpscare-final.png'), 600);
+      setTimeout(() => triggerJumpscare('assets/images/jumpscare-final.jpg'), 600);
     }
 
     // Handle game over
@@ -1616,7 +1630,15 @@ function tryOpenApp(schemeUrl, fallbackUrl, timeoutMs) {
     // If we're still on this page after timeout, scheme failed → open fallback
     if (Date.now() - start < timeoutMs + 200) {
       if (fallbackUrl) {
-        window.open(fallbackUrl, '_blank');
+        // Try direct location change as last resort (mobile browsers may block window.open)
+        try {
+          var w = window.open(fallbackUrl, '_blank');
+          if (!w || w.closed || typeof w.closed === 'undefined') {
+            window.location.href = fallbackUrl;
+          }
+        } catch(e) {
+          window.location.href = fallbackUrl;
+        }
       }
     }
     document.body.removeChild(iframe);
@@ -1650,6 +1672,14 @@ function copyShareText() {
   try { document.execCommand('copy'); } catch(e) {}
   document.body.removeChild(ta);
   return Promise.resolve();
+}
+
+/* ── Mark shared (unlock retry button) ── */
+function markShared() {
+  gameState.hasSharedThisSession = true;
+  gameState.shareCount++;
+  localStorage.setItem('zombie_train_shares', gameState.shareCount.toString());
+  retryBtn.disabled = false;
 }
 
 /* ── Web Share API (native share sheet) ── */
@@ -1777,7 +1807,7 @@ function restartGame() {
 }
 
 function shareAndRestart() {
-  shareNative().then(() => {
+  shareNative().finally(() => {
     setTimeout(() => {
       hideEnding();
       gameState.history = [];
