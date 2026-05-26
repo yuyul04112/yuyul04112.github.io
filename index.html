@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="에코랜드 테마파크의 몰입형 호러 체험 — 좀비트레인. 기차를 타고 좀비를 피해 탈출하라!">
+<meta property="og:title" content="좀비트레인 — 에코랜드 테마파크">
+<meta property="og:description" content="에코랜드 테마파크에서 펼쳐지는 좀비 탈출 체험. 선택이 당신의 운명을 결정합니다.">
+<meta property="og:type" content="website">
+<title>좀비트레인 — 에코랜드 테마파크</title>
+
+<!-- Google Fonts: Horror -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nosifer&family=Creepster&family=Nanum+Gothic+Coding&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-deep: #050505;
+  --bg-dark: #0a0a0a;
+  --text-primary: #c4c4c4;
+  --text-dim: #6b6b6b;
+  --accent-blood: #8b0000;
+  --accent-blood-bright: #b30000;
+  --accent-glow: #4a0000;
+  --overlay-bg: rgba(0, 0, 0, 0.85);
+  --font-horror: 'Nosifer', cursive;
+  --font-display: 'Creepster', cursive;
+  --font-body: 'Nanum Gothic Coding', monospace;
+  --transition-speed: 0.8s;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.8;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   BACKGROUND IMAGE FRAME SYSTEM
+   ============================================================ */
+.bg-image-frame {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity var(--transition-speed) ease-in-out;
+  filter: brightness(0.25) grayscale(40%) blur(1px);
+}
+.bg-image-frame.active { opacity: 1; }
+.bg-image-frame::after {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%);
+}
+
+/* Dark vignette overlay */
+.vignette {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 150px 60px rgba(0,0,0,0.9);
+}
+
+/* Scanline effect */
+.scanlines {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+  pointer-events: none; opacity: 0.08;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.3) 2px,
+    rgba(0,0,0,0.3) 4px
+  );
+}
+
+/* Film grain overlay */
+.film-grain {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3;
+  pointer-events: none; opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  animation: grainShift 0.5s steps(3) infinite;
+}
+@keyframes grainShift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(-1px, 1px); }
+  66% { transform: translate(1px, -1px); }
+}
+
+/* ============================================================
+   MAIN CONTAINER
+   ============================================================ */
+.main-container {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column;
+  width: 100%; height: 100%;
+  max-width: 480px; margin: 0 auto;
+  padding: 20px 24px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  text-align: center; padding: 18px 0 6px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(139,0,0,0.15);
+  margin-bottom: 4px;
+}
+.header__title {
+  font-family: var(--font-horror);
+  font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+  color: #990000;
+  text-shadow: 0 0 15px rgba(139,0,0,0.6), 0 0 40px rgba(139,0,0,0.3);
+  letter-spacing: 3px;
+  animation: flicker 5s infinite;
+}
+.header__subtitle {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: #555;
+  letter-spacing: 4px;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   SCENE AREA
+   ============================================================ */
+.scene-area {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 8px 0;
+}
+.scene-area::-webkit-scrollbar { width: 3px; }
+.scene-area::-webkit-scrollbar-thumb { background: var(--accent-blood); border-radius: 3px; }
+
+.scene-text {
+  font-size: 1rem; line-height: 2;
+  color: #d4d4d4;
+  text-shadow: 0 0 12px rgba(139,0,0,0.4), 0 0 2px rgba(200,200,200,0.3);
+  min-height: 120px;
+  opacity: 1; transition: opacity 0.4s ease;
+  letter-spacing: 0.02em;
+}
+.scene-text.fading { opacity: 0; }
+
+/* Text highlight colors */
+.hl-soldier { color: #5b8c5a; text-shadow: 0 0 6px rgba(91,140,90,0.4); }
+.hl-zombie { color: #c0392b; text-shadow: 0 0 8px rgba(192,57,43,0.5); font-weight: bold; }
+.hl-escape { color: #f1c40f; text-shadow: 0 0 8px rgba(241,196,15,0.4); }
+.hl-forest { color: #27ae60; text-shadow: 0 0 6px rgba(39,174,96,0.3); }
+.hl-train { color: #e67e22; text-shadow: 0 0 6px rgba(230,126,34,0.3); }
+.hl-rescue { color: #3498db; text-shadow: 0 0 8px rgba(52,152,219,0.4); }
+.hl-safe { color: #2ecc71; text-shadow: 0 0 8px rgba(46,204,113,0.4); }
+.hl-danger { color: #e74c3c; text-shadow: 0 0 8px rgba(231,76,60,0.5); animation: flicker 2s infinite; }
+.hl-death { color: #8b0000; text-shadow: 0 0 10px rgba(139,0,0,0.6); font-weight: bold; }
+.hl-brand { color: #ff6b35; text-shadow: 0 0 10px rgba(255,107,53,0.5); }
+
+.scene-text .cursor {
+  display: inline-block; width: 8px; height: 18px;
+  background: var(--accent-blood-bright);
+  animation: blink 0.8s step-end infinite;
+  vertical-align: middle; margin-left: 2px;
+}
+
+/* ============================================================
+   CHOICES
+   ============================================================ */
+.choices-area {
+  flex-shrink: 0; padding: 16px 0 8px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.choice-btn {
+  display: block; width: 100%;
+  padding: 14px 18px;
+  background: rgba(15, 0, 0, 0.75);
+  border: 1px solid rgba(139, 0, 0, 0.35);
+  color: #b8b8b8;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  position: relative; overflow: hidden;
+  letter-spacing: 0.03em;
+}
+.choice-btn::before {
+  content: '▸'; margin-right: 10px;
+  color: var(--accent-blood);
+  font-size: 0.7rem;
+  transition: all 0.3s ease;
+}
+.choice-btn::after {
+  content: '';
+  position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(139,0,0,0.08), transparent);
+  transition: left 0.5s ease;
+}
+.choice-btn:hover, .choice-btn:active {
+  background: rgba(139, 0, 0, 0.25);
+  border-color: var(--accent-blood-bright);
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255,0,0,0.5);
+  transform: translateX(6px);
+  box-shadow: 0 0 20px rgba(139,0,0,0.2), inset 0 0 20px rgba(139,0,0,0.1);
+}
+.choice-btn:hover::before { color: #ff3333; }
+.choice-btn:hover::after { left: 100%; }
+.choice-btn:disabled {
+  opacity: 0.4; pointer-events: none;
+}
+
+/* ============================================================
+   GAME OVER OVERLAY
+   ============================================================ */
+.gameover-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+  background: rgba(0, 0, 0, 0);
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  transition: background 0.6s ease;
+}
+.gameover-overlay.active {
+  background: rgba(0, 0, 0, 0.92);
+  pointer-events: all;
+}
+.gameover-panel {
+  background: rgba(5, 0, 0, 0.97);
+  border: 2px solid var(--accent-blood);
+  border-radius: 6px;
+  padding: 36px 24px;
+  text-align: center;
+  max-width: 360px; width: 90%;
+  opacity: 0; transform: scale(0.85);
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 80px rgba(139,0,0,0.5), 0 0 150px rgba(139,0,0,0.2), inset 0 0 40px rgba(139,0,0,0.08);
+}
+.gameover-overlay.active .gameover-panel {
+  opacity: 1; transform: scale(1);
+}
+.gameover-panel__title {
+  font-family: var(--font-horror);
+  font-size: 2.2rem;
+  color: #cc0000;
+  text-shadow: 0 0 30px rgba(200,0,0,0.8), 0 0 60px rgba(139,0,0,0.5);
+  margin-bottom: 16px;
+  animation: flicker 1.5s infinite;
+  letter-spacing: 8px;
+}
+.gameover-panel__msg {
+  font-size: 0.9rem; color: #999;
+  margin-bottom: 20px; line-height: 1.7;
+}
+.gameover-panel__zombie-name {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: #ff3333;
+  text-shadow: 0 0 15px rgba(255,0,0,0.7), 0 0 40px rgba(139,0,0,0.5);
+  margin-bottom: 24px;
+  padding: 10px 20px;
+  border: 1px dashed rgba(200,0,0,0.5);
+  border-radius: 4px;
+  display: inline-block;
+  letter-spacing: 2px;
+  animation: flicker 2.5s infinite;
+  background: rgba(139,0,0,0.1);
+}
+.gameover-panel__share-title {
+  font-family: var(--font-display);
+  font-size: 1rem; color: var(--text-primary);
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+.share-buttons {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.share-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px;
+  border: none; border-radius: 6px;
+  font-family: var(--font-body); font-size: 0.9rem;
+  font-weight: bold; cursor: pointer;
+  transition: all 0.2s ease;
+  color: #fff;
+}
+.share-btn:active { transform: scale(0.97); }
+.share-btn--kakao { background: #FEE500; color: #191919; }
+.share-btn--facebook { background: #1877F2; }
+.share-btn--instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.share-btn--native { background: rgba(139,0,0,0.5); border: 1px solid var(--accent-blood); }
+.share-btn--retry {
+  background: var(--accent-blood); margin-top: 8px;
+  animation: pulse 2s infinite;
+}
+
+/* ============================================================
+   START SCREEN
+   ============================================================ */
+.start-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200;
+  background: radial-gradient(ellipse at center, #0a0000 0%, #020000 70%, #000 100%);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+.start-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.start-screen__content {
+  text-align: center; padding: 24px;
+  position: relative;
+}
+.start-screen__logo {
+  font-family: var(--font-horror);
+  font-size: clamp(2.2rem, 8vw, 3.2rem);
+  color: #990000;
+  text-shadow: 0 0 30px rgba(139,0,0,0.8), 0 0 80px rgba(139,0,0,0.5), 0 0 120px rgba(139,0,0,0.3);
+  animation: flicker 2.5s infinite;
+  line-height: 1.2; margin-bottom: 20px;
+  letter-spacing: 4px;
+}
+.start-screen__tagline {
+  font-family: var(--font-display);
+  font-size: 1rem; color: #777;
+  letter-spacing: 5px; margin-bottom: 48px;
+}
+.start-btn {
+  display: inline-block;
+  padding: 18px 56px;
+  background: transparent;
+  border: 2px solid #990000;
+  color: #cc0000;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 6px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.4s ease;
+  text-shadow: 0 0 15px rgba(200,0,0,0.6);
+  animation: pulse 2s infinite;
+  position: relative;
+}
+.start-btn:hover, .start-btn:active {
+  background: #8b0000;
+  color: #fff;
+  box-shadow: 0 0 60px rgba(139,0,0,0.7), 0 0 100px rgba(139,0,0,0.3);
+  border-color: #ff0000;
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   ENDING SCREEN
+   ============================================================ */
+.ending-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 150;
+  background: radial-gradient(ellipse at center, #0a0a0a 0%, #000 100%);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: all 1s ease;
+}
+.ending-screen.active { opacity: 1; visibility: visible; pointer-events: all; }
+.ending-screen__content {
+  text-align: center; padding: 24px; max-width: 420px;
+}
+.ending-screen__title {
+  font-family: var(--font-horror);
+  font-size: 1.8rem; color: #4caf50;
+  text-shadow: 0 0 30px rgba(76,175,80,0.6), 0 0 60px rgba(76,175,80,0.3);
+  margin-bottom: 20px;
+  letter-spacing: 4px;
+  animation: flicker 4s infinite;
+}
+.ending-screen__msg {
+  font-size: 0.95rem; color: #bbb;
+  margin-bottom: 28px; line-height: 1.9;
+}
+.ending-screen__cta {
+  display: block; width: 100%;
+  padding: 14px 36px;
+  background: #8b0000;
+  border: none; color: #fff;
+  font-family: var(--font-display); font-size: 1.1rem;
+  letter-spacing: 3px; cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+  box-shadow: 0 0 20px rgba(139,0,0,0.3);
+}
+.ending-screen__cta:hover { background: #b30000; box-shadow: 0 0 40px rgba(139,0,0,0.5); }
+
+/* ============================================================
+   MUTE TOGGLE
+   ============================================================ */
+.mute-toggle {
+  position: fixed; top: 16px; right: 16px; z-index: 300;
+  width: 40px; height: 40px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+}
+.mute-toggle:hover { border-color: var(--accent-blood); color: var(--accent-blood-bright); }
+
+/* ============================================================
+   PROGRESS DOTS
+   ============================================================ */
+.progress-dots {
+  display: flex; justify-content: center; gap: 8px;
+  padding: 10px 0; flex-shrink: 0;
+}
+.progress-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(139,0,0,0.2);
+  transition: all 0.4s ease;
+}
+.progress-dot.visited {
+  background: #b30000;
+  box-shadow: 0 0 8px rgba(179,0,0,0.8), 0 0 16px rgba(139,0,0,0.4);
+}
+
+/* Replay stats */
+.replay-stats {
+  text-align: center; font-size: 0.7rem; color: var(--text-dim);
+  padding: 4px 0; flex-shrink: 0;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  cursor: pointer;
+}
+.replay-stats:hover { color: var(--accent-blood-bright); }
+
+/* Zombie Collection Modal */
+.zombie-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 400;
+  background: rgba(0,0,0,0.9);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: all 0.3s ease;
+}
+.zombie-modal.active { opacity: 1; visibility: visible; pointer-events: all; }
+.zombie-modal__panel {
+  background: rgba(10,0,0,0.97);
+  border: 1px solid var(--accent-blood);
+  border-radius: 8px;
+  width: 90%; max-width: 380px; max-height: 80vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 0 40px rgba(139,0,0,0.3);
+}
+.zombie-modal__header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; border-bottom: 1px solid rgba(139,0,0,0.3);
+}
+.zombie-modal__title {
+  font-family: var(--font-display); font-size: 1.1rem; color: var(--accent-blood-bright);
+}
+.zombie-modal__close {
+  background: none; border: none; color: var(--text-dim); font-size: 1.3rem;
+  cursor: pointer; padding: 4px 8px;
+}
+.zombie-modal__close:hover { color: var(--accent-blood-bright); }
+.zombie-modal__count {
+  padding: 8px 20px; font-size: 0.8rem; color: var(--text-dim);
+  border-bottom: 1px solid rgba(139,0,0,0.15);
+}
+.zombie-modal__list {
+  flex: 1; overflow-y: auto; padding: 8px 20px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.zombie-modal__list::-webkit-scrollbar { width: 3px; }
+.zombie-modal__list::-webkit-scrollbar-thumb { background: var(--accent-blood); border-radius: 3px; }
+.zombie-modal__item {
+  font-size: 0.85rem; color: var(--text-primary);
+  padding: 6px 10px; background: rgba(139,0,0,0.1);
+  border-radius: 4px; border-left: 2px solid var(--accent-blood);
+}
+.zombie-modal__empty {
+  text-align: center; color: var(--text-dim); padding: 24px 0;
+  font-size: 0.9rem;
+}
+.zombie-modal__footer {
+  padding: 12px 20px; border-top: 1px solid rgba(139,0,0,0.3);
+  text-align: center;
+}
+.zombie-modal__btn {
+  background: var(--accent-blood); border: none; color: #fff;
+  padding: 8px 24px; border-radius: 4px; cursor: pointer;
+  font-family: var(--font-body); font-size: 0.85rem;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  3% { opacity: 0.7; }
+  6% { opacity: 1; }
+  9% { opacity: 0.8; }
+  12% { opacity: 1; }
+  50% { opacity: 0.9; }
+  53% { opacity: 0.6; }
+  56% { opacity: 1; }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(139,0,0,0.3); }
+  50% { box-shadow: 0 0 30px rgba(139,0,0,0.6); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-4px); }
+  20% { transform: translateX(4px); }
+  30% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  50% { transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+  70% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+@keyframes bloodDrip {
+  0% { opacity: 0; transform: translateY(-100%); }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(100vh); }
+}
+.shaking { animation: shake 0.5s ease; }
+
+/* Blood drip overlay for game over */
+.blood-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99;
+  pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(180,0,0,0.35) 0%, rgba(139,0,0,0.15) 40%, transparent 75%);
+  transition: opacity 1.5s ease;
+}
+.blood-overlay.active { opacity: 1; }
+
+/* Jumpscare overlay */
+.jumpscare {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90;
+  pointer-events: none; opacity: 0;
+  background-image: url('assets/images/jumpscare-zombie.png');
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  transition: opacity 0.03s ease;
+}
+.jumpscare.active {
+  opacity: 1;
+  animation: jumpscareFlash 0.5s ease-out forwards;
+}
+
+/* Red flash overlay for jumpscare */
+.jumpscare-flash {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 89;
+  pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, rgba(180,0,0,0.7) 0%, rgba(139,0,0,0.3) 50%, transparent 100%);
+  transition: opacity 0.03s ease;
+}
+.jumpscare-flash.active {
+  opacity: 1;
+  animation: redFlash 0.5s ease-out forwards;
+}
+
+@keyframes jumpscareFlash {
+  0% { opacity: 0; transform: scale(0.6); filter: brightness(1); }
+  15% { opacity: 1; transform: scale(1.15); filter: brightness(1.8); }
+  30% { opacity: 1; transform: scale(1.05); filter: brightness(1.3); }
+  100% { opacity: 0; transform: scale(1); filter: brightness(1); }
+}
+@keyframes redFlash {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  40% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-8px, 4px); }
+  20% { transform: translate(8px, -4px); }
+  30% { transform: translate(-6px, -2px); }
+  40% { transform: translate(6px, 2px); }
+  50% { transform: translate(-4px, 0); }
+  60% { transform: translate(4px, 0); }
+  70% { transform: translate(-2px, 0); }
+  80% { transform: translate(2px, 0); }
+  90% { transform: translate(-1px, 0); }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (min-width: 768px) {
+  .main-container { padding: 32px 40px; }
+  .scene-text { font-size: 1.1rem; }
+  .choice-btn { font-size: 1rem; padding: 16px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background Image Frames -->
+<div class="bg-image-frame" id="bg-train" style="background-image: url('assets/images/bg-train-interior.jpg'), url('https://images.unsplash.com/photo-1474486858533-2016a5e3b4b9?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-forest" style="background-image: url('assets/images/bg-forest-night.jpg'), url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-tunnel" style="background-image: url('assets/images/bg-deep-forest.jpg'), url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-station" style="background-image: url('assets/images/bg-safe-zone.jpg'), url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-swamp" style="background-image: url('assets/images/bg-forest-swamp.jpg'), url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-cabin" style="background-image: url('assets/images/bg-final-crisis.jpg'), url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60');"></div>
+<div class="bg-image-frame" id="bg-escape" style="background-image: url('assets/images/bg-escape-rescue.jpg'), url('https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=800&q=60');"></div>
+
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="film-grain"></div>
+<div class="blood-overlay" id="bloodOverlay"></div>
+<div class="jumpscare-flash" id="jumpscareFlash"></div>
+<div class="jumpscare" id="jumpscareOverlay"></div>
+
+<!-- Start Screen -->
+<div class="start-screen" id="startScreen">
+  <div class="start-screen__content">
+    <div class="start-screen__logo">좀비<br>트레인</div>
+    <div class="start-screen__tagline">— 에코랜드 테마파크 —</div>
+    <button class="start-btn" id="startBtn" onclick="startGame()">탑 승</button>
+  </div>
+</div>
+
+<!-- Main Game -->
+<div class="main-container" id="mainContainer">
+  <div class="header">
+    <div class="header__title">좀비트레인</div>
+    <div class="header__subtitle">에코랜드 테마파크</div>
+  </div>
+  <div class="progress-dots" id="progressDots"></div>
+  <div class="replay-stats" id="replayStats" style="display:none;"></div>
+  <div class="scene-area">
+    <div class="scene-text" id="sceneText"></div>
+  </div>
+  <div class="choices-area" id="choicesArea"></div>
+</div>
+
+<!-- Game Over Overlay -->
+<div class="gameover-overlay" id="gameoverOverlay">
+  <div class="gameover-panel">
+    <div class="gameover-panel__title">사 망</div>
+    <div class="gameover-panel__msg" id="gameoverMsg"></div>
+    <div class="gameover-panel__zombie-name" id="gameoverZombieName"></div>
+    <div class="gameover-panel__share-title">SNS에 공유하고 다시 도전하세요</div>
+    <div class="share-buttons">
+      <button class="share-btn share-btn--native" onclick="shareNative()">
+        📤 공유하고 재도전하기
+      </button>
+      <button class="share-btn share-btn--kakao" onclick="shareKakao()">
+        💬 카카오톡 공유
+      </button>
+      <button class="share-btn share-btn--facebook" onclick="shareFacebook()">
+        👍 페이스북 공유
+      </button>
+      <button class="share-btn share-btn--instagram" onclick="shareInstagram()">
+        📷 인스타그램 공유
+      </button>
+      <button class="share-btn share-btn--retry" id="retryBtn" onclick="retryGame()" disabled>
+        🔄 다시 도전하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Ending Screen -->
+<div class="ending-screen" id="endingScreen">
+  <div class="ending-screen__content">
+    <div class="ending-screen__title" id="endingTitle"></div>
+    <div class="ending-screen__msg" id="endingMsg"></div>
+    <button class="ending-screen__cta" onclick="shareAndRestart()">SNS에 생존 인증하기</button>
+    <button class="ending-screen__cta" style="background:transparent; border:1px solid #4caf50; color:#4caf50; text-shadow:0 0 10px rgba(76,175,80,0.4);" onclick="restartGame()">처음부터 다시하기</button>
+  </div>
+</div>
+
+<!-- Zombie Collection Modal -->
+<div class="zombie-modal" id="zombieModal">
+  <div class="zombie-modal__panel">
+    <div class="zombie-modal__header">
+      <span class="zombie-modal__title">🧟 좀비 도감</span>
+      <button class="zombie-modal__close" onclick="closeZombieModal()">✕</button>
+    </div>
+    <div class="zombie-modal__count" id="zombieModalCount"></div>
+    <div class="zombie-modal__list" id="zombieModalList"></div>
+    <div class="zombie-modal__footer">
+      <button class="zombie-modal__btn" onclick="closeZombieModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mute Toggle -->
+<button class="mute-toggle" id="muteToggle" onclick="toggleMute()" title="소리 켜기/끄기">🔊</button>
+
+<script>
+/* ============================================================
+   SPOILER VARIATIONS — slight text variations per playthrough
+   ============================================================ */
+function vary(texts) {
+  return texts[Math.floor(Math.random() * texts.length)];
+}
+
+/* ============================================================
+   TEXT HIGHLIGHTER — color important keywords
+   ============================================================ */
+const HIGHLIGHT_MAP = {
+  '군인': '<span class="hl-soldier">군인</span>',
+  '좀비': '<span class="hl-zombie">좀비</span>',
+  '탈출': '<span class="hl-escape">탈출</span>',
+  '숲': '<span class="hl-forest">숲</span>',
+  '기차': '<span class="hl-train">기차</span>',
+  '구조대': '<span class="hl-rescue">구조대</span>',
+  '안전': '<span class="hl-safe">안전</span>',
+  '위험': '<span class="hl-danger">위험</span>',
+  '비상': '<span class="hl-danger">비상</span>',
+  '죽음': '<span class="hl-death">죽음</span>',
+  '생존': '<span class="hl-safe">생존</span>',
+  '에코랜드': '<span class="hl-brand">에코랜드</span>',
+  '좀비트레인': '<span class="hl-brand">좀비트레인</span>'
+};
+
+function highlightText(text) {
+  let result = text;
+  for (const [key, replacement] of Object.entries(HIGHLIGHT_MAP)) {
+    const regex = new RegExp(key, 'g');
+    result = result.replace(regex, replacement);
+  }
+  return result;
+}
+
+/* ============================================================
+   REPLAY TRACKING — achievements & collection
+   ============================================================ */
+function getReplayData() {
+  try {
+    return JSON.parse(localStorage.getItem('zombie_train_replay') || '{}');
+  } catch(e) { return {}; }
+}
+
+function saveReplayData(data) {
+  localStorage.setItem('zombie_train_replay', JSON.stringify(data));
+}
+
+function recordEndingReached() {
+  const data = getReplayData();
+  if (!data.endings) data.endings = [];
+  const endingKey = 'escape';
+  if (!data.endings.includes(endingKey)) {
+    data.endings.push(endingKey);
+  }
+  data.totalPlays = (data.totalPlays || 0) + 1;
+  saveReplayData(data);
+  updateReplayStats();
+}
+
+function recordZombieDeath(zombieName) {
+  const data = getReplayData();
+  if (!data.zombies) data.zombies = [];
+  if (!data.zombies.includes(zombieName)) {
+    data.zombies.push(zombieName);
+  }
+  data.totalDeaths = (data.totalDeaths || 0) + 1;
+  data.totalPlays = (data.totalPlays || 0) + 1;
+  saveReplayData(data);
+  updateReplayStats();
+}
+
+function updateReplayStats() {
+  const data = getReplayData();
+  const el = document.getElementById('replayStats');
+  if (!el) return;
+  const total = data.totalPlays || 0;
+  const deaths = data.totalDeaths || 0;
+  const endings = (data.endings || []).length;
+  const zombies = (data.zombies || []).length;
+  if (total > 0) {
+    el.innerHTML = '🔄 ' + total + '회 도전 | 💀 ' + deaths + '회 사망 | ⭐ ' + endings + '회 탈출 | 🧟 ' + zombies + '종 좀비 수집';
+    el.style.display = 'block';
+    el.onclick = openZombieModal;
+  }
+}
+
+/* ============================================================
+   ZOMBIE COLLECTION MODAL
+   ============================================================ */
+function openZombieModal() {
+  const data = getReplayData();
+  const zombies = data.zombies || [];
+  const list = document.getElementById('zombieModalList');
+  const count = document.getElementById('zombieModalCount');
+  const modal = document.getElementById('zombieModal');
+
+  count.textContent = '총 ' + zombies.length + '종의 좀비를 만났습니다 (최대 10,000종)';
+
+  if (zombies.length === 0) {
+    list.innerHTML = '<div class="zombie-modal__empty">아직 만난 좀비가 없습니다.<br>게임오버 될 때마다 새로운 좀비가 추가됩니다!</div>';
+  } else {
+    list.innerHTML = zombies.map(function(z, i) {
+      return '<div class="zombie-modal__item">#' + (i + 1) + ' 「' + z + '」</div>';
+    }).join('');
+  }
+
+  modal.classList.add('active');
+}
+
+function closeZombieModal() {
+  document.getElementById('zombieModal').classList.remove('active');
+}
+
+/* ============================================================
+   SCENE DATA — follows actual performance flow (5 stages)
+   ============================================================ */
+const SCENES = {
+  // ── STAGE 1: 군인의 안내로 기차 탑승 ──
+  start: {
+    id: 'start',
+    get text() {
+      return vary([
+        '군인이 손전등을 흔들며 당신을 재촉합니다.\n"서두르세요! 이게 마지막 열차입니다!"\n\n당신은 황급히 기차에 올라탔습니다.\n문이 닫히고, 기차는 천천히 출발합니다.\n\n창밖으로 어둠이 스며들고\n어디선가 금속성 소음이 들려오기 시작합니다.',
+        '야간 훈련 중이던 군인이 긴급히 당신을 멈춰 세웁니다.\n"민간인입니까? 지금 즉시 이 열차에 타십시오!"\n\n그의 표정은 사뭇 진지합니다.\n기차에 오르자마자 문이 잠깁니다.\n\n객실 안은 어둡고, 공기는 무겁게 가라앉아 있습니다.',
+        '군인 한 명이 긴박하게 손짓합니다.\n"지금 바로 탑승하세요. 설명은 나중에!"\n\n당신은 영문도 모른 채 기차에 올랐습니다.\n기차가 움직이자, 객실 조명이 깜빡이기 시작합니다.\n\n저 멀리서 무언가 끌려오는 소리...'
+      ]);
+    },
+    bg: 'bg-train',
+    choices: [
+      { text: '군인에게 상황을 물어본다', next: 'askSoldier' },
+      { text: '조용히 자리에 앉아 주변을 살핀다', next: 'caughtInTrain' },
+      { text: '비상용 손전등을 찾아 객실을 비춘다', next: 'flashlightFail' },
+      { text: '"저기요, 이거 다 가짜죠?" 군인에게 묻는다', next: 'askIfZombie' }
+    ]
+  },
+
+  // ── STAGE 2: 기차에서 기괴한 소음과 함께 좀비 등장 ──
+  askSoldier: {
+    id: 'askSoldier',
+    get text() {
+      return vary([
+        '당신은 군인에게 다가가 조용히 묻습니다.\n"무슨 일입니까? 도대체 저 소리는 뭐죠?"\n\n군인은 떨리는 목소리로 말합니다.\n"테마파크 전체가 감염됐습니다. 저건... 사람이 아닙니다."\n\n그 순간, 객실 끝에서 \'드르륵...\' 하는 소리.\n무언가 바닥을 긁으며 다가오고 있습니다.\n\n군인이 소리칩니다. "뛰어요! 지금 당장!"\n그가 당신의 팔을 잡아끕니다.',
+        '당신이 다가가자, 군인의 얼굴이 창백해집니다.\n"들리십니까? 이 소리... 놈들이 다가오고 있어요."\n\n천장에서 무언가 쿵쿵거리는 소리.\n객실 뒤편에서 그림자가 일렁입니다.\n\n군인이 당신을 밀치며 외칩니다. "도망치십시오!"\n그가 앞장서서 달리기 시작합니다.',
+        '당신이 군인에게 손짓하자, 그는 말없이 권총을 꺼내 듭니다.\n"이미 늦었습니다. 놈들이 열차 안에 있습니다."\n\n그때, 객실 중앙에서 비명이 터져 나옵니다.\n좀비가 좌석 사이를 기어 나오고 있습니다!\n\n군인이 방아쇠를 당깁니다. "지금 뛰어요!"\n그가 당신의 등 뒤를 엄호하며 따라붙습니다.'
+      ]);
+    },
+    bg: 'bg-train',
+    choices: [
+      { text: '군인과 함께 객실 뒤편으로 탈출한다', next: 'fleeWithSoldier' },
+      { text: '혼자서 반대 방향으로 도망친다', next: 'caughtInTrain' },
+      { text: '"혹시 같이 셀카 한 장 찍을까요?"', next: 'selfieFail' }
+    ]
+  },
+
+  // ── STAGE 3: 아비규환의 기차에서 탈출 ──
+  fleeWithSoldier: {
+    id: 'fleeWithSoldier',
+    get text() {
+      return vary([
+        '군인과 함께 객실을 가로질러 달립니다.\n\n뒤에서 비명과 함께 무언가 부서지는 소리.\n좀비들이 객실을 점령해가고 있습니다.\n\n군인이 비상 해치를 가리킵니다.\n"저기로 나가면 숲입니다. 준비되셨습니까?"\n그가 해치를 열자, 차가운 바람이 밀려듭니다.',
+        '군인이 앞장서서 길을 엽니다.\n\n"이리로! 주저하지 마세요!"\n좀비 하나가 옆에서 튀어나오지만\n군인이 재빨리 밀쳐냅니다.\n\n기차 출입문이 보입니다. 숲이 코앞입니다.\n군인이 문을 발로 차서 엽니다. "뛰어요!"',
+        '군인과 함께 미친 듯이 달립니다.\n\n객실은 이미 아수라장이 되었습니다.\n좀비들이 사방에서 몰려들고,\n승객들의 비명이 공기를 찢습니다.\n\n군인이 문을 발로 차서 엽니다. "뛰어요!"\n그가 당신을 먼저 내보내고 뒤따라 뛰어내립니다.'
+      ]);
+    },
+    bg: 'bg-train',
+    choices: [
+      { text: '군인과 함께 숲으로 뛰어든다', next: 'forestChase' },
+      { text: '군인을 먼저 보내고 뒤를 확인한다', next: 'caughtInTrain' },
+      { text: '"잠깐! 영상 촬영 좀 하고 갈게요!"', next: 'youtubeFail' }
+    ]
+  },
+
+  // ── STAGE 4: 숲에서 좀비에게 쫓김 ──
+  forestChase: {
+    id: 'forestChase',
+    get text() {
+      return vary([
+        '숲은 칠흑 같은 어둠으로 가득합니다.\n\n나뭇가지가 얼굴을 스치고, 발밑의 낙엽이\n바스락거릴 때마다 심장이 철렁 내려앉습니다.\n\n뒤에서 여러 발자국 소리가 쫓아옵니다.\n좀비들이 숲속으로 따라 들어왔습니다!\n\n군인이 숨을 헐떡이며 말합니다.\n"오솔길로 갑시다. 깊이 들어가야 따돌릴 수 있어요!"',
+        '숲속으로 뛰어들자, 세상이 조용해집니다.\n\n하지만 그 고요는 오래가지 않습니다.\n나무 뒤에서, 덤불 속에서, 곳곳에서\n기괴한 신음소리가 들려옵니다.\n\n좀비들이 숲 전체에 퍼져 있습니다!\n\n군인이 당신의 어깨를 잡습니다.\n"이쪽 오솔길로! 깊이 들어가는 게 살 길입니다!"',
+        '어둠 속에서 나무들만이 유일한 은신처입니다.\n\n숨을 고르며 뒤를 돌아보니,\n기차에서 쏟아져 나온 좀비들이\n숲의 경계를 넘어 들어오고 있습니다.\n\n그들의 붉은 눈동자가 어둠 속에서 반짝입니다.\n\n군인이 재촉합니다.\n"오솔길로 깊이 들어가요! 주저하지 마세요!"'
+      ]);
+    },
+    bg: 'bg-forest',
+    choices: [
+      { text: '군인의 말대로 숲속 오솔길을 따라 깊이 들어간다', next: 'deepForest' },
+      { text: '나무 위로 올라가 숨자고 제안한다', next: 'treeClimbFail' },
+      { text: '계곡 쪽으로 방향을 트자고 한다', next: 'caughtInValley' },
+      { text: '무작정 달리다가 방향을 잃는다', next: 'runBlindlyFail' },
+      { text: '뒷짐 지고 여유롭게 걸어간다', next: 'mushroomFail' }
+    ]
+  },
+
+  // ── STAGE 5: 숲속 돌파 ──
+  deepForest: {
+    id: 'deepForest',
+    get text() {
+      return vary([
+        '오솔길을 따라 숲 깊은 곳으로 들어갑니다.\n\n나무들이 점점 빽빽해지고, 달빛조차\n땅에 닿지 못할 만큼 어두워집니다.\n\n그때, 덤불 속에서 무언가 튀어나옵니다!\n좀비가 바로 앞을 막아섰습니다!\n\n군인이 외칩니다. "피하세요! 옆으로!"',
+        '숲속으로 들어갈수록 공기가 차가워집니다.\n\n발밑의 낙엽이 푹신해서 발소리가 죽습니다.\n하지만 그것은 쫓는 자들에게도 유리한 조건.\n\n갑자기 옆에서 나뭇가지 부러지는 소리!\n좀비가 코앞까지 다가왔습니다!\n\n군인이 당신을 옆으로 밀칩니다. "이쪽으로!"',
+        '길은 점점 좁아지고, 주변은 어둠뿐입니다.\n\n숨소리만이 유일한 길잡이입니다.\n그때, 앞쪽 덤불이 흔들리더니...\n\n두 팔을 벌린 좀비가 길을 막아섭니다!\n뒤돌아갈 수도, 앞으로 갈 수도 없습니다.\n\n군인이 낮은 목소리로 말합니다.\n"옆으로 빠져요. 제가 엄호할 테니..."'
+      ]);
+    },
+    bg: 'bg-tunnel',
+    choices: [
+      { text: '군인의 지시대로 좀비를 피해 옆으로 빠진다', next: 'dodgeZombie' },
+      { text: '주운 돌멩이를 던져 시선을 돌리려 한다', next: 'throwRockFail' },
+      { text: '좀비에게 반갑게 손을 흔들며 인사한다', next: 'begFail' }
+    ]
+  },
+
+  // ── STAGE 6: 최종 탈출 ──
+  dodgeZombie: {
+    id: 'dodgeZombie',
+    get text() {
+      return vary([
+        '당신은 재빠른 몸놀림으로 좀비를 피합니다.\n\n좀비의 손이 당신의 옷깃을 스치고 지나갑니다.\n아슬아슬하게 빠져나와 전력 질주!\n\n숲의 끝자락이 보이기 시작합니다.\n저 멀리 불빛이... 탈출구입니다!\n\n군인이 뒤따라오며 외칩니다.\n"저기요! 저기 불빛이 보여요!"',
+        '좀비의 움직임을 예측하고 옆으로 굴러 피합니다.\n\n놈이 허공에 손을 휘젓는 사이\n당신은 전속력으로 달립니다.\n\n나무 사이로 군용 트럭의 헤드라이트가 보입니다.\n구조대가 와 있습니다!\n\n군인이 숨을 헐떡이며 손가락으로 가리킵니다.\n"저기... 저기요!"',
+        '본능적으로 몸을 숙여 좀비의 팔 아래로 빠져나갑니다.\n\n뒤에서 넘어지는 소리가 들리지만\n뒤돌아볼 여유가 없습니다.\n\n숲이 끝나는 지점에 도달했습니다.\n저 앞에 안전 지대가 보입니다!\n\n군인이 마지막 힘을 쥐어짜며 따라옵니다.\n"보여요... 저기...!"'
+      ]);
+    },
+    bg: 'bg-station',
+    choices: [
+      { text: '숲의 출구를 향해 전력 질주한다', next: 'finalCrisis' }
+    ]
+  },
+
+  // ── STAGE 7: 마지막 위기 ──
+  finalCrisis: {
+    id: 'finalCrisis',
+    get text() {
+      return vary([
+        '탈출구가 코앞입니다!\n\n그런데 갑자기, 옆쪽 덤불에서\n마지막 좀비 한 마리가 튀어나옵니다.\n\n놈은 당신과 군인 사이를 갈라놓으며\n입을 벌리고 달려듭니다.\n\n군인이 소리칩니다.\n"제가 막을 테니 먼저 가요! 지금!"',
+        '안전 지대가 바로 저기인데...\n\n쓰러진 나무 뒤에서 좀비가 기어 나옵니다.\n탈출로를 막아선 마지막 장애물.\n\n군인이 재빨리 돌을 집어 듭니다.\n"내가 이쪽으로 유인할 테니,\n당신은 반대쪽으로 돌아가요!"',
+        '거의 다 왔습니다!\n\n그런데 땅속에서 손이 튀어나와\n당신의 발목을 붙잡습니다.\n땅속에 숨어있던 좀비입니다!\n\n군인이 달려와 좀비의 팔을 붙잡습니다.\n"지금이에요! 뛰어요! 제가 막을게요!"'
+      ]);
+    },
+    bg: 'bg-cabin',
+    choices: [
+      { text: '군인을 믿고 출구로 전력 질주한다', next: 'finalEscape' },
+      { text: '군인을 도와 함께 싸우려 한다', next: 'heroicFail' },
+      { text: '"마지막 좀비랑 인증샷 한 장만..."', next: 'selfieFail' }
+    ]
+  },
+
+  // ── UNIFIED ENDING ──
+  finalEscape: {
+    id: 'finalEscape',
+    get text() {
+      return vary([
+        '숲을 빠져나오자, 군용 트럭의 헤드라이트가\n당신을 비춥니다.\n\n구조대원들이 달려옵니다.\n"생존자 확인!"\n\n뒤이어 군인도 숲을 빠져나옵니다.\n그는 숨을 몰아쉬며 고개를 끄덕입니다.\n말없이 주먹을 들어 보입니다.',
+        '마지막 나무를 지나치자,\n눈앞에 펼쳐진 것은 안전 지대.\n\n구조대가 기다리고 있었습니다.\n잠시 후, 군인도 비틀거리며 도착합니다.\n\n그는 말없이 당신의 어깨를\n두 번 두드립니다.',
+        '드디어 숲이 끝났습니다.\n\n구조 트럭이 대기 중이고,\n군인들이 당신을 향해 달려옵니다.\n\n뒤따라 나온 군인이\n당신 옆에 서서 숨을 고릅니다.\n둘은 말없이 안전 지대를 바라봅니다.'
+      ]);
+    },
+    bg: 'bg-escape',
+    isEnding: true,
+    endingTitle: '탈출 성공!',
+    get endingMsg() {
+      return vary([
+        '숲을 빠져나와 구조대와 합류했습니다!\n\n군인이 당신을 맞이하며 말합니다.\n"당신은 정말 운이 좋은 겁니다."\n\n이것은 에코랜드 테마파크의\n몰입형 호러 체험 「좀비트레인」의\n시나리오 중 하나입니다.\n\n실제 공연에서 이 스릴을\n직접 경험해보세요!',
+        '당신은 마침내 안전 지대에 도착했습니다!\n\n구조대가 기다리고 있었습니다.\n뒤돌아보니, 숲은 다시 고요해졌습니다.\n\n이것은 에코랜드 테마파크의\n실제 공연 「좀비트레인」을\n바탕으로 한 이야기입니다.\n\n현장에서 진짜 공포를 느껴보세요!',
+        '탈출 성공! 구조 트럭에 올라탔습니다.\n\n숲 저편에서 아직도 비명이 들려옵니다.\n하지만 당신은 살아남았습니다.\n\n이 체험은 에코랜드 테마파크의\n공연 「좀비트레인」의\n일부를 각색한 것입니다.\n\n실제 공연은 더욱 강렬합니다!'
+      ]);
+    },
+    choices: []
+  },
+
+  // ── GAME OVER SCENES ──
+  askIfZombie: {
+    id: 'askIfZombie',
+    get text() {
+      return vary([
+        '당신은 진지한 표정으로 군인에게 묻습니다.\n"저기요, 이거 다 가짜죠? 몰래카메라 아니에요?"\n\n군인은 어이없다는 듯 당신을 바라봅니다.\n"지금 그런 소리 할 때입니까?!"\n\n하지만 그 순간, 진짜 좀비가 뒤에서 나타납니다.',
+        '당신은 군인의 팔을 톡톡 치며 묻습니다.\n"솔직히 말해보세요. 이거 연기죠? 분장이 너무 과해요."\n\n군인의 표정이 일그러집니다.\n"이게 연기로 보입니까?!"\n\n그 말이 끝나자마자, 진짜 좀비들이 객실을 덮칩니다.'
+      ]);
+    },
+    bg: 'bg-train',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '가짜라고 의심하다 진짜 좀비에게 당했습니다...\n이건 몰래카메라가 아니었습니다.',
+        '의심병이 화를 불렀습니다...\n분장이 아니라 진짜였습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  selfieFail: {
+    id: 'selfieFail',
+    get text() {
+      return vary([
+        '당신은 스마트폰을 꺼내 듭니다.\n"잠깐만요! 인증샷 한 장만!"\n\n군인이 기겁하며 소리칩니다.\n"지금 그게 뭐 하는 짓입니까?!"\n\n플래시가 터지자, 그 빛에 모든 좀비들이\n일제히 당신을 향해 몰려듭니다.',
+        '당신은 좀비를 배경으로 셀카를 찍으려 합니다.\n"이거 인스타그램에서 난리 나겠는데?"\n\n군인이 소리 지릅니다. "제발 정신 차려요!"\n\n하지만 셔터 소리에 좀비들이 달려들고,\n마지막으로 찍힌 사진은\n당신의 비명 짓는 얼굴이었습니다.'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '셀카 플래시에 좀비들이 몰려들었습니다...\n인증샷은 마지막 사진이 되었습니다.',
+        '인스타그램보다 생존이 먼저였습니다...\n좋아요 대신 좀비가 달려들었습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  youtubeFail: {
+    id: 'youtubeFail',
+    get text() {
+      return vary([
+        '당신은 스마트폰을 꺼내 영상 촬영을 시작합니다.\n"여러분! 지금 좀비 테마파크 한가운데입니다!"\n\n군인이 소리칩니다. "지금 그걸 왜 찍어요?!"\n\n하지만 당신의 목소리에 좀비들이 정확히 위치를 파악합니다.',
+        '"이거 찍으면 조회수 대박이겠는데!"\n\n군인이 미친 듯이 고개를 젓습니다.\n"이 사람 제정신이 아니에요!"\n\n영상 촬영에 집중하는 동안\n좀비는 30마리로 늘어났습니다.'
+      ]);
+    },
+    bg: 'bg-train',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '영상 촬영 중 좀비에게 위치가 발각되었습니다...\n마지막 영상은 유족에게 전달되겠죠.',
+        '촬영의 유혹을 이기지 못했습니다...\n좀비들이 구독자가 되었습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  mushroomFail: {
+    id: 'mushroomFail',
+    get text() {
+      return vary([
+        '당신은 갑자기 뒷짐을 지고 느긋하게 걷기 시작합니다.\n"이렇게 여유 있게 걸으면 좀비도 못 알아볼 거예요."\n\n군인이 기겁하며 소리칩니다.\n"지금 뭐 하시는 겁니까?!"\n\n당신의 느긋한 걸음걸이에 좀비들이 오히려 호기심을 느끼고\n순식간에 몰려듭니다.',
+        '"침착하게 걸어가면 좀비도 저를 무시할 겁니다."\n\n군인이 소리칩니다. "그게 무슨 논리예요?!"\n\n하지만 당신은 여유롭게 뒷짐을 진 채 걷습니다.\n좀비들은 그런 당신을 완벽한 표적으로 인식했습니다.'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '뒷짐 지고 걷다가 좀비의 완벽한 표적이 되었습니다...\n여유는 독이 되었습니다.',
+        '느긋함이 화를 불렀습니다...\n좀비는 뒷짐 진 먹잇감을 좋아합니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  begFail: {
+    id: 'begFail',
+    get text() {
+      return vary([
+        '당신은 환한 미소를 지으며 좀비에게 손을 흔듭니다.\n"안녕하세요! 반갑습니다!"\n\n군인이 어이없어하며 외칩니다.\n"지금 뭐 하시는 거예요?!"\n\n좀비는 잠시 멈칫하더니...\n더 큰 포효와 함께 달려듭니다.',
+        '"야! 좀비! 오늘 기분 어때?"\n\n군인이 분노합니다. "제발 정신 차려요!"\n\n하지만 좀비는 인사에 관심이 없었습니다.\n당신의 반가운 목소리가 오히려 먹잇감 위치를 알려준 셈이죠.'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '좀비에게 반갑게 인사했지만 통하지 않았습니다...\n좀비는 사교성을 중요시하지 않습니다.',
+        '친근한 인사가 오히려 독이 되었습니다...\n좀비는 인사보다 식사를 좋아합니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  flashlightFail: {
+    id: 'flashlightFail',
+    get text() {
+      return vary([
+        '비상 손전등을 찾아 객실을 비춥니다.\n\n불빛이 스친 벽면에 핏자국이 선명합니다.\n좌석 곳곳이 찢겨 있고, 바닥에는...\n\n손전등 불빛 끝에 비친 것은\n입을 벌리고 서 있는 좀비의 형상이었습니다!\n\n놈은 빛에 반응해 곧장 달려듭니다.\n피할 틈도 없이 덮쳐졌습니다.',
+        '손전등을 켜자, 객실 구석에서 반짝이는 무언가.\n\n그것은 피로 얼룩진 군번줄이었습니다.\n이 열차에는 이미 군인들이 왔었던 겁니다.\n\n그때, 등 뒤에서 숨소리가 들립니다.\n돌아보니 좀비가 바로 코앞에...!\n\n손전등 불빛이 놈들을 끌어들인 것입니다.',
+        '손전등 불빛이 객실을 가로지릅니다.\n\n빈 좌석들... 아니, 비어있지 않습니다.\n좌석 아래마다 웅크린 형체들이 있습니다.\n\n불빛에 반응한 그들이 일제히 고개를 듭니다.\n수십 쌍의 붉은 눈동자가 당신을 향합니다!\n\n빛이 오히려 재앙을 불렀습니다.'
+      ]);
+    },
+    bg: 'bg-train',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '손전등 불빛이 좀비들을 끌어들였습니다...\n어둠 속에 숨어있어야 했습니다.',
+        '빛을 찾으려다 죽음을 불렀습니다...\n객실은 이미 좀비 소굴이었습니다.',
+        '호기심이 화를 불렀습니다...\n불빛에 반응한 좀비들이 일제히 덮쳐왔습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  treeClimbFail: {
+    id: 'treeClimbFail',
+    get text() {
+      return vary([
+        '당신은 재빨리 나무를 타고 올라갑니다.\n\n위에서 내려다본 숲은 충격적입니다.\n수십 마리의 좀비들이 숲을 배회하고 있습니다.\n\n하지만 나무 위도 안전하지 않습니다.\n나뭇가지가 당신의 무게를 버티지 못하고\n삐걱거리다 결국 부러집니다!\n\n아래에는 좀비들이 입을 벌리고 기다리고 있습니다.',
+        '나무 위로 올라가자 잠시 안도합니다.\n\n하지만 아래서 들려오는 소리가 심상치 않습니다.\n좀비들이 나무 밑동을 긁고 있습니다.\n\n나무가 흔들리더니, 뿌리째 뽑혀 쓰러집니다!\n당신은 좀비들 한가운데로 떨어졌습니다.',
+        '거친 나무껍질을 붙잡고 기어오릅니다.\n\n높은 가지에 올라 숨을 고릅니다.\n아래에서는 좀비들이 서성이고 있습니다.\n\n그런데... 나무 위에도 무언가 있습니다.\n옆 가지에 걸린 시체가 움직이기 시작합니다!\n나무 위에도 좀비가 있었던 것입니다!'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '나무 위도 안전하지 않았습니다...\n가지가 부러져 좀비들 속으로 떨어졌습니다.',
+        '나무가 통째로 쓰러졌습니다...\n좀비들이 뿌리째 파내고 있었던 것입니다.',
+        '나무 위에도 좀비가 있었습니다...\n위아래로 포위되어 빠져나올 수 없었습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  runBlindlyFail: {
+    id: 'runBlindlyFail',
+    get text() {
+      return vary([
+        '방향도 모른 채 무작정 달렸습니다.\n\n나뭇가지에 얼굴이 긁히고,\n발이 덩굴에 걸려 넘어집니다.\n\n일어나 보니, 주변은 온통 낯선 풍경.\n왔던 길조차 알 수 없습니다.\n\n그리고 사방에서 들려오는 신음소리...\n좀비들에게 완전히 포위되었습니다.',
+        '공포에 질려 정신없이 내달렸습니다.\n\n숨이 턱까지 차오르고, 다리가 풀립니다.\n잠시 멈춰 선 순간, 뒤에서 발소리가...\n\n돌아보니 좀비들이 바로 뒤까지 쫓아왔습니다.\n도망칠 체력도, 방향 감각도 남아있지 않습니다.',
+        '이성을 잃고 닥치는 대로 달렸습니다.\n\n나무와 나무 사이를 구분하지 못하고\n점점 더 깊은 숲속으로 빨려 들어갑니다.\n\n마침내 완전히 길을 잃었을 때,\n주변의 모든 나무 뒤에서 붉은 눈동자가 떠오릅니다.'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '무작정 달리다 길을 완전히 잃었습니다...\n숲 한가운데서 좀비들에게 포위되었습니다.',
+        '체력이 바닥나고 방향 감각을 잃었습니다...\n좀비들이 지친 당신을 따라잡았습니다.',
+        '공포에 질려 이성을 잃은 대가입니다...\n숲 깊은 곳에서 길을 잃고 고립되었습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  throwRockFail: {
+    id: 'throwRockFail',
+    get text() {
+      return vary([
+        '돌멩이를 집어 힘껏 던집니다.\n\n하지만 돌이 빗나가 엉뚱한 방향으로 날아갑니다.\n소리가 난 쪽에서 오히려 더 많은 좀비들이\n모여들기 시작했습니다.\n\n군인이 절망적으로 외칩니다.\n"이런... 더 많은 놈들이 몰려오고 있어요!"\n\n퇴로가 완전히 막혔습니다.',
+        '돌멩이를 던졌지만, 효과는 없었습니다.\n\n좀비들은 소리에 반응하기는커녕\n오히려 돌이 날아온 방향을 정확히 알아채고\n당신을 향해 돌진합니다.\n\n군인이 당황한 목소리로 말합니다.\n"잘못됐어요... 놈들이 우리 위치를 알았어요!"',
+        '돌멩이로 나무를 가격했지만...\n\n빗맞은 돌이 근처의 돌무더기를 무너뜨립니다.\n굉음과 함께 산사태처럼 돌들이 쏟아지고,\n그 소리에 숲 전체의 좀비들이 몰려듭니다.\n\n군인이 고개를 젓습니다.\n"이제... 끝인 것 같군요."'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '돌멩이가 빗나가 더 많은 좀비를 불러들였습니다...\n작전은 완전히 실패했습니다.',
+        '소리로 유인하려다 역효과가 났습니다...\n좀비들이 오히려 당신의 위치를 알아챘습니다.',
+        '돌무더기가 무너지며 굉음이 울려 퍼졌습니다...\n숲 전체의 좀비들이 몰려들었습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  heroicFail: {
+    id: 'heroicFail',
+    get text() {
+      return vary([
+        '당신은 군인을 도우려 달려듭니다.\n\n하지만 좀비의 힘은 상상을 초월합니다.\n함께 싸우려던 순간, 뒤에서 또 다른 좀비가\n당신의 발목을 붙잡습니다.\n\n군인이 소리칩니다. "안 돼요! 물러서요!"\n그러나 이미 늦었습니다.',
+        '용기 있게 맞서 싸우려 했지만...\n\n좀비는 맨손으로 상대할 수 있는 상대가 아닙니다.\n당신이 달려들자, 놈은 오히려 더 거세게 반격합니다.\n\n군인이 절규합니다. "제발... 제발 가라고요!"\n당신의 희생은 헛되지 않았지만, 너무 늦었습니다.',
+        '군인을 구하려는 마음에 몸이 먼저 움직였습니다.\n\n하지만 그 순간, 땅속에서 또 다른 좀비들이\n우르르 쏟아져 나옵니다.\n\n둘은 순식간에 포위되었고,\n군인이 마지막으로 외칩니다. "함께여서... 영광이었습니다."'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '군인을 구하려다 함께 당했습니다...\n좀비의 힘은 상상을 초월했습니다.',
+        '용기는 있었지만 역부족이었습니다...\n맨손으로 좀비를 상대할 수 없었습니다.',
+        '영웅이 되려다 희생되었습니다...\n땅속에서 더 많은 좀비들이 쏟아져 나왔습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  jumpOutEarly: {
+    id: 'jumpOutEarly',
+    get text() {
+      return vary([
+        '당신은 너무 일찍 뛰어내렸습니다.\n\n기차는 아직 숲 한가운데를 달리고 있었고,\n주변은 온통 좀비 소굴이었습니다.\n\n착지하자마자 수십 마리의 좀비가 몰려듭니다.\n도망칠 틈도 없이 포위되었습니다.',
+        '공포를 이기지 못하고 뛰어내렸지만\n그것은 최악의 선택이었습니다.\n\n기차 주변에는 이미 좀비 떼가\n먹잇감을 기다리고 있었습니다.\n\n당신은 착지와 동시에 붙잡히고 말았습니다.',
+        '충동적으로 뛰어내린 것을 후회합니다.\n\n숲 바닥은 생각보다 훨씬 어두웠고,\n발을 디디는 순간 무언가를 밟았습니다.\n\n그것은 웅크리고 있던 좀비였습니다!'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '너무 이른 탈출 시도가 화를 불렀습니다...\n기차 밖은 이미 좀비들의 영역이었습니다.',
+        '기차를 너무 일찍 떠난 대가를 치렀습니다...\n숲은 안전하지 않았습니다.',
+        '충동적인 선택이 치명적이었습니다...\n숲 바닥에는 좀비들이 도사리고 있었습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  caughtInTrain: {
+    id: 'caughtInTrain',
+    get text() {
+      return vary([
+        '기차 안에서 너무 오래 망설였습니다.\n\n좀비들이 객실을 완전히 장악했습니다.\n출입구는 모두 막혔고, 창문마저 깨졌습니다.\n\n좀비들이 사방에서 밀려들어옵니다.\n이제 빠져나갈 구멍이 없습니다.',
+        '우물쭈물하다 기회를 놓쳤습니다.\n\n좀비들이 기차 전체를 점령했습니다.\n객실과 객실 사이는 이미 놈들의 소굴.\n\n당신은 마지막 남은 구석에 몰렸습니다.',
+        '기차 안에 남아있기로 한 결정이\n돌이킬 수 없는 실수가 되었습니다.\n\n좀비들이 모든 출구를 봉쇄했습니다.\n기차는 거대한 무덤이 되었습니다.'
+      ]);
+    },
+    bg: 'bg-train',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '기차 안에 갇혀 버렸습니다...\n좀비들이 모든 탈출로를 차단했습니다.',
+        '망설임이 죽음을 불렀습니다...\n기차는 이미 좀비들의 소굴이었습니다.',
+        '때를 놓친 대가를 치렀습니다...\n기차는 당신의 철창이 되었습니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  wrongTurn: {
+    id: 'wrongTurn',
+    get text() {
+      return vary([
+        '숲속에서 길을 잘못 들었습니다.\n\n이곳은 좀비들이 가장 많이 모여있는\n함정 구역이었습니다.\n\n사방에서 붉은 눈동자들이 떠오릅니다.\n퇴로는 이미 사라졌습니다.',
+        '방향 감각을 잃고 헤매다가\n좀비 소굴 한가운데로 들어왔습니다.\n\n주변의 모든 나무 뒤에서\n기괴한 형상들이 걸어 나옵니다.\n\n완전히 포위되었습니다.',
+        '지름길인 줄 알고 들어선 길이\n알고 보니 죽음의 골짜기였습니다.\n\n좀비들이 양쪽에서 몰려오고,\n뒤로 돌아갈 길마저 막혔습니다.'
+      ]);
+    },
+    bg: 'bg-forest',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '숲속에서 길을 잃고 좀비 소굴에 빠졌습니다...\n이곳은 함정이었습니다.',
+        '잘못된 방향 선택이었습니다...\n좀비 떼의 한가운데로 들어왔습니다.',
+        '지름길은 죽음의 길이었습니다...\n양쪽에서 좀비들이 몰려옵니다.'
+      ]);
+    },
+    choices: []
+  },
+
+  caughtInValley: {
+    id: 'caughtInValley',
+    get text() {
+      return vary([
+        '계곡은 생각보다 훨씬 위험했습니다.\n\n안개 속에서 앞이 보이지 않고,\n발밑의 돌들은 미끄러웠습니다.\n\n넘어진 사이, 좀비들이 사방에서 몰려듭니다.\n안개 속에서 손길들이 당신을 붙잡습니다.',
+        '계곡의 안개가 오히려 독이 되었습니다.\n\n앞을 볼 수 없어 방향을 잃었고,\n그 사이 좀비들에게 포위되었습니다.\n\n안개 속에서 수많은 손이 당신을 향해 뻗어집니다.',
+        '계곡 바닥에 고립되었습니다.\n\n물소리에 발소리가 묻혀\n좀비들이 접근하는 것을 눈치채지 못했습니다.\n\n정신을 차렸을 때는 이미 늦었습니다.'
+      ]);
+    },
+    bg: 'bg-swamp',
+    isGameOver: true,
+    get gameOverMsg() {
+      return vary([
+        '계곡의 안개가 당신을 삼켰습니다...\n좀비들이 안개 속에서 덮쳐왔습니다.',
+        '계곡은 죽음의 덫이었습니다...\n안개 속에서 빠져나오지 못했습니다.',
+        '물소리에 속았습니다...\n좀비들의 접근을 눈치채지 못했습니다.'
+      ]);
+    },
+    choices: []
+  }
+};
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+let gameState = {
+  currentScene: null,
+  history: [],
+  isMuted: false,
+  shareCount: parseInt(localStorage.getItem('zombie_train_shares') || '0'),
+  hasSharedThisSession: false
+};
+
+/* ============================================================
+   DOM REFS
+   ============================================================ */
+const $ = (sel) => document.querySelector(sel);
+const sceneText = $('#sceneText');
+const choicesArea = $('#choicesArea');
+const gameoverOverlay = $('#gameoverOverlay');
+const gameoverMsg = $('#gameoverMsg');
+const gameoverZombieName = $('#gameoverZombieName');
+const retryBtn = $('#retryBtn');
+const bloodOverlay = $('#bloodOverlay');
+const jumpscareOverlay = $('#jumpscareOverlay');
+const jumpscareFlash = $('#jumpscareFlash');
+const startScreen = $('#startScreen');
+const endingScreen = $('#endingScreen');
+const endingTitle = $('#endingTitle');
+const endingMsg = $('#endingMsg');
+const progressDots = $('#progressDots');
+const mainContainer = $('#mainContainer');
+const muteToggle = $('#muteToggle');
+
+/* ============================================================
+   AUDIO (optional, graceful degradation)
+   ============================================================ */
+let bgmAudio = null;
+try {
+  bgmAudio = new Audio();
+  // Placeholder — replace with actual audio file when available
+  // bgmAudio.src = 'assets/audio/horror-ambient.mp3';
+  bgmAudio.loop = true;
+  bgmAudio.volume = 0.3;
+} catch(e) { /* audio not supported */ }
+
+function toggleMute() {
+  gameState.isMuted = !gameState.isMuted;
+  muteToggle.textContent = gameState.isMuted ? '🔇' : '🔊';
+  if (bgmAudio) {
+    if (gameState.isMuted) {
+      bgmAudio.pause();
+    } else {
+      bgmAudio.play().catch(() => {});
+    }
+  }
+}
+
+/* ============================================================
+   BACKGROUND IMAGE SWITCHING
+   ============================================================ */
+let currentBg = null;
+function switchBackground(bgId) {
+  if (currentBg === bgId) return;
+  // Deactivate current
+  if (currentBg) {
+    const prevEl = document.getElementById(currentBg);
+    if (prevEl) prevEl.classList.remove('active');
+  }
+  // Activate new
+  const newEl = document.getElementById(bgId);
+  if (newEl) {
+    newEl.classList.add('active');
+    currentBg = bgId;
+  }
+}
+
+/* ============================================================
+   JUMPSCARE
+   ============================================================ */
+function triggerJumpscare(imagePath) {
+  if (!jumpscareOverlay || !jumpscareFlash) return;
+
+  // Set the jumpscare image dynamically
+  jumpscareOverlay.style.backgroundImage = `url('${imagePath}')`;
+
+  // Trigger red flash + screen shake + jumpscare image simultaneously
+  jumpscareFlash.classList.add('active');
+  jumpscareOverlay.classList.add('active');
+  mainContainer.style.animation = 'screenShake 0.5s ease-out';
+
+  // Clean up after animation completes
+  setTimeout(() => {
+    jumpscareFlash.classList.remove('active');
+    jumpscareOverlay.classList.remove('active');
+    mainContainer.style.animation = '';
+  }, 500);
+}
+
+/* ============================================================
+   PROGRESS DOTS
+   ============================================================ */
+function updateProgressDots() {
+  const totalScenes = Object.keys(SCENES).length;
+  const visitedCount = gameState.history.length;
+  progressDots.innerHTML = '';
+  for (let i = 0; i < Math.min(totalScenes, 20); i++) {
+    const dot = document.createElement('span');
+    dot.className = 'progress-dot';
+    if (i < visitedCount) dot.classList.add('visited');
+    progressDots.appendChild(dot);
+  }
+}
+
+/* ============================================================
+   TYPEWRITER EFFECT
+   ============================================================ */
+let typewriterTimer = null;
+function typewriterEffect(text, callback) {
+  if (typewriterTimer) clearTimeout(typewriterTimer);
+  sceneText.innerHTML = '';
+  sceneText.classList.remove('fading');
+
+  const highlighted = highlightText(text);
+  const lines = highlighted.split('\n');
+  let lineIndex = 0;
+  let charIndex = 0;
+  let html = '';
+
+  function type() {
+    if (lineIndex < lines.length) {
+      if (charIndex < lines[lineIndex].length) {
+        // Handle HTML tags — skip them as a whole
+        if (lines[lineIndex][charIndex] === '<') {
+          const endIdx = lines[lineIndex].indexOf('>', charIndex);
+          if (endIdx !== -1) {
+            html += lines[lineIndex].substring(charIndex, endIdx + 1);
+            charIndex = endIdx + 1;
+            typewriterTimer = setTimeout(type, 5);
+            return;
+          }
+        }
+        html += lines[lineIndex][charIndex];
+        sceneText.innerHTML = html + '<span class="cursor"></span>';
+        charIndex++;
+        typewriterTimer = setTimeout(type, 25 + Math.random() * 20);
+      } else {
+        html += '<br>';
+        lineIndex++;
+        charIndex = 0;
+        typewriterTimer = setTimeout(type, 80);
+      }
+    } else {
+      sceneText.innerHTML = html;
+      if (callback) callback();
+    }
+  }
+  type();
+}
+
+/* ============================================================
+   RENDER SCENE
+   ============================================================ */
+function renderScene(sceneId) {
+  const scene = SCENES[sceneId];
+  if (!scene) return;
+
+  gameState.currentScene = sceneId;
+  gameState.history.push(sceneId);
+  updateProgressDots();
+
+  // Switch background
+  switchBackground(scene.bg);
+
+  // Clear choices
+  choicesArea.innerHTML = '';
+
+  // Typewriter text
+  typewriterEffect(scene.text, () => {
+    // Render choices after text completes
+    if (scene.choices && scene.choices.length > 0) {
+      scene.choices.forEach((choice, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice.text;
+        btn.style.animationDelay = `${index * 0.1}s`;
+        btn.onclick = () => handleChoice(choice.next);
+        choicesArea.appendChild(btn);
+      });
+    }
+
+    // Trigger jumpscare for key zombie appearance scenes
+    if (sceneId === 'askSoldier') {
+      setTimeout(() => triggerJumpscare('assets/images/jumpscare-train.png'), 800);
+    } else if (sceneId === 'deepForest') {
+      setTimeout(() => triggerJumpscare('assets/images/jumpscare-forest.png'), 1000);
+    } else if (sceneId === 'finalCrisis') {
+      setTimeout(() => triggerJumpscare('assets/images/jumpscare-final.png'), 600);
+    }
+
+    // Handle game over
+    if (scene.isGameOver) {
+      setTimeout(() => showGameOver(scene.gameOverMsg), 1200);
+    }
+
+    // Handle ending
+    if (scene.isEnding) {
+      setTimeout(() => showEnding(scene.endingTitle, scene.endingMsg), 1500);
+    }
+  });
+}
+
+function handleChoice(nextSceneId) {
+  // Disable all choice buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  // Fade out text
+  sceneText.classList.add('fading');
+
+  setTimeout(() => {
+    renderScene(nextSceneId);
+  }, 400);
+}
+
+/* ============================================================
+   ZOMBIE NAME GENERATOR — A+B combination (50+ each)
+   ============================================================ */
+const ZOMBIE_A = [
+  '눈물흘리는', '이빨빠진', '침흘리는', '절뚝이는', '속삭이는', '비명지르는',
+  '웃음터뜨리는', '눈알굴리는', '피토하는', '손톱긁는', '머리카락씹는', '혀꼬인',
+  '등골오싹한', '발톱찢긴', '귀없는', '턱빠진', '살갗벗겨진', '뼈드러난',
+  '입술터진', '눈꺼풀없는', '목뼈꺾인', '갈비뼈휘어진', '혓바닥긴', '손가락꼬인',
+  '발목접질린', '어깨탈골된', '무릎깨진', '광대뼈함몰된', '턱관절풀린', '안구충혈된',
+  '피눈물나는', '썩은내풍기는', '구더기꼬이는', '파리떼몰려드는', '시궁창냄새나는',
+  '관절비틀린', '척추휘어진', '골수마르는', '살점떨어지는', '내장흘러내리는',
+  '눈구멍텅빈', '코없는', '입찢어진', '혀잘린', '귀물어뜯긴',
+  '손목꺾인', '발가락문드러진', '피부썩어가는', '근육경련하는', '신경꼬인',
+  '두개골금간', '털빠진', '침샘터진', '눈물샘마른', '땀샘고장난',
+  '동공풀린', '각막흐려진', '망막찢긴', '고막터진', '성대찢긴',
+  '기도막힌', '식도꼬인', '위액역류하는', '장기꼬여있는', '혈관터진',
+  '림프절부은', '갑상선비대해진', '뇌수축된', '소뇌탈출한', '척수마비된',
+  '신경절단된', '근섬유찢긴', '힘줄끊어진', '인대늘어진', '연골마모된',
+  '치아부러진', '잇몸썩은', '구강건조한', '식은땀나는', '오한떠는',
+  '발작하는', '경련일으키는', '환각보는', '망상에사로잡힌', '악몽꾸는',
+  '불면증걸린', '기억잃은', '이름잊은', '과거를삼킨', '미래를토하는',
+  '시체먹는', '피빨아먹는', '뼈갉아먹는', '살뜯어먹는', '내장파먹는'
+];
+
+const ZOMBIE_B = [
+  '관광객', '승무원', '기관사', '매표원', '청소부', '경비원',
+  '마술사', '광대', '인형탈알바', '풍선장수', '솜사탕아저씨', '회전목마지기',
+  '롤러코스터매니아', '귀신의집가이드', '바이킹조종사', '범퍼카소년', '관람차노인',
+  '놀이공원원숭이', '마스코트', '캐릭터배우', '안전요원', '티켓검표원',
+  '팝콘소년', '핫도그아줌마', '아이스크림아가씨', '기념품점직원', '락커룸관리인',
+  '분실물센터직원', '안내방송아나운서', '지도파는사람', '우산대여직원', '유모차대여직원',
+  '응급처치요원', '구급대원', '소방관', '경찰관', '군인',
+  '택시기사', '버스기사', '트럭운전사', '배달부', '우체부',
+  '피자가게사장', '치킨집알바', '편의점야간알바', '카페바리스타', '노래방주인',
+  '학원강사', '체육선생님', '수학여행인솔자', '견학온학생', '졸업여행커플',
+  '신혼부부', '은퇴노부부', '외국인관광객', '유튜버', '인플루언서',
+  '방송국PD', '리포터', '카메라맨', '스턴트맨', '특수분장사',
+  '좀비영화감독', '공포소설작가', '퇴마사', '무당', '역술인',
+  '점성술사', '타로마스터', '심령사진가', '도시전설수집가', '미스터리연구원',
+  '고스트헌터', '초자연현상조사관', 'UFO연구가', '음모론자', '생존주의자',
+  '프리다이버', '번지점퍼', '패러글라이더', '스카이다이버', '익스트림스포츠맨',
+  '마라토너', '철인3종선수', '씨름선수', '태권도사범', '유도선수',
+  '발레리나', '치어리더', '댄스강사', '스트리트댄서', '비보이',
+  '성악가', '오페라가수', '판소리명창', '랩퍼', '헤비메탈보컬',
+  '록페스티벌관객', 'EDM파티피플', '클럽DJ', '재즈피아니스트', '거리악사'
+];
+
+function generateZombieName() {
+  const a = ZOMBIE_A[Math.floor(Math.random() * ZOMBIE_A.length)];
+  const b = ZOMBIE_B[Math.floor(Math.random() * ZOMBIE_B.length)];
+  return a + ' ' + b;
+}
+
+/* ============================================================
+   GAME OVER
+   ============================================================ */
+function showGameOver(msg) {
+  const zombieName = generateZombieName();
+  gameoverMsg.textContent = msg;
+  gameoverZombieName.textContent = '당신은 「' + zombieName + '」 좀비가 되었습니다.';
+  gameoverOverlay.classList.add('active');
+  bloodOverlay.classList.add('active');
+  mainContainer.classList.add('shaking');
+
+  recordZombieDeath(zombieName);
+
+  // Check if already shared this session
+  if (gameState.hasSharedThisSession || gameState.shareCount > 0) {
+    retryBtn.disabled = false;
+  }
+
+  setTimeout(() => {
+    mainContainer.classList.remove('shaking');
+  }, 500);
+}
+
+function hideGameOver() {
+  gameoverOverlay.classList.remove('active');
+  bloodOverlay.classList.remove('active');
+  gameoverZombieName.textContent = '';
+}
+
+/* ============================================================
+   ENDING
+   ============================================================ */
+function showEnding(title, msg) {
+  endingTitle.textContent = title;
+  endingMsg.textContent = msg;
+  endingScreen.classList.add('active');
+  recordEndingReached();
+}
+
+function hideEnding() {
+  endingScreen.classList.remove('active');
+}
+
+/* ============================================================
+   SNS SHARING
+   ============================================================ */
+const SHARE_CONFIG = {
+  title: '좀비트레인 — 에코랜드 테마파크',
+  text: '에코랜드 테마파크의 좀비트레인에서 탈출했다! 당신의 선택은? 🧟🚂',
+  url: window.location.href,
+  hashtags: ['좀비트레인', '에코랜드테마파크', '호러체험', '텍스트어드벤처']
+};
+
+function markShared() {
+  gameState.hasSharedThisSession = true;
+  gameState.shareCount++;
+  localStorage.setItem('zombie_train_shares', gameState.shareCount.toString());
+  retryBtn.disabled = false;
+}
+
+// Web Share API (mobile native)
+async function shareNative() {
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: SHARE_CONFIG.title,
+        text: SHARE_CONFIG.text,
+        url: SHARE_CONFIG.url
+      });
+      markShared();
+    } else {
+      // Fallback: copy to clipboard
+      await navigator.clipboard.writeText(
+        `${SHARE_CONFIG.title}\n${SHARE_CONFIG.text}\n${SHARE_CONFIG.url}`
+      );
+      alert('링크가 클립보드에 복사되었습니다! 친구에게 공유해주세요.');
+      markShared();
+    }
+  } catch(e) {
+    // User cancelled share
+    console.log('Share cancelled:', e);
+  }
+}
+
+// KakaoTalk
+function shareKakao() {
+  // Check if Kakao SDK is loaded
+  if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+    Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: SHARE_CONFIG.title,
+        description: SHARE_CONFIG.text,
+        imageUrl: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=400&q=60',
+        link: { webUrl: SHARE_CONFIG.url, mobileWebUrl: SHARE_CONFIG.url }
+      },
+      buttons: [{ title: '좀비트레인 체험하기', link: { webUrl: SHARE_CONFIG.url, mobileWebUrl: SHARE_CONFIG.url } }]
+    });
+    markShared();
+  } else {
+    // Fallback: copy + open KakaoTalk
+    copyAndOpen('카카오톡');
+  }
+}
+
+// Facebook
+function shareFacebook() {
+  const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_CONFIG.url)}&quote=${encodeURIComponent(SHARE_CONFIG.text)}`;
+  window.open(fbUrl, '_blank', 'width=600,height=400');
+  markShared();
+}
+
+// Instagram (copy link + guide)
+async function shareInstagram() {
+  try {
+    await navigator.clipboard.writeText(
+      `${SHARE_CONFIG.title}\n${SHARE_CONFIG.text}\n${SHARE_CONFIG.url}`
+    );
+    alert('링크가 클립보드에 복사되었습니다!\n인스타그램 스토리에 붙여넣기 해주세요.');
+    markShared();
+  } catch(e) {
+    alert('공유에 실패했습니다. 다시 시도해주세요.');
+  }
+}
+
+function copyAndOpen(platform) {
+  navigator.clipboard.writeText(
+    `${SHARE_CONFIG.title}\n${SHARE_CONFIG.text}\n${SHARE_CONFIG.url}`
+  ).then(() => {
+    alert(`링크가 클립보드에 복사되었습니다!\n${platform}에 붙여넣기 해주세요.`);
+    markShared();
+  }).catch(() => {
+    alert('공유에 실패했습니다. 다시 시도해주세요.');
+  });
+}
+
+/* ============================================================
+   RETRY / RESTART
+   ============================================================ */
+function retryGame() {
+  hideGameOver();
+  gameState.history = [];
+  gameState.currentScene = null;
+  updateProgressDots();
+  renderScene('start');
+}
+
+function restartGame() {
+  hideEnding();
+  hideGameOver();
+  gameState.history = [];
+  gameState.currentScene = null;
+  gameState.hasSharedThisSession = false;
+  updateProgressDots();
+  renderScene('start');
+}
+
+function shareAndRestart() {
+  shareNative().then(() => {
+    setTimeout(() => {
+      hideEnding();
+      gameState.history = [];
+      gameState.currentScene = null;
+      updateProgressDots();
+      renderScene('start');
+    }, 500);
+  });
+}
+
+/* ============================================================
+   START GAME
+   ============================================================ */
+function startGame() {
+  startScreen.classList.add('hidden');
+  updateReplayStats();
+  // Try to play BGM on user interaction
+  if (bgmAudio && !gameState.isMuted) {
+    bgmAudio.play().catch(() => {});
+  }
+  renderScene('start');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+// Pre-check if Kakao SDK should be loaded
+// Uncomment and add your JavaScript key when ready:
+/*
+const KAKAO_JS_KEY = 'YOUR_KAKAO_JAVASCRIPT_KEY';
+if (KAKAO_JS_KEY !== 'YOUR_KAKAO_JAVASCRIPT_KEY') {
+  const kakaoScript = document.createElement('script');
+  kakaoScript.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+  kakaoScript.integrity = 'sha384-6kGmQkUYRxJxLhQ4g4n3ZqMqYqkGkYgYqGkQYgYQqGkQYgYQqGkQYgYqGkQYgY';
+  kakaoScript.crossOrigin = 'anonymous';
+  kakaoScript.onload = () => {
+    Kakao.init(KAKAO_JS_KEY);
+    console.log('Kakao SDK initialized');
+  };
+  document.head.appendChild(kakaoScript);
+}
+*/
+
+// Initialize progress dots
+updateProgressDots();
+
+console.log('🧟 좀비트레인 — 에코랜드 테마파크');
+console.log('💀 호러 텍스트 어드벤처 준비 완료');
+console.log('🚂 "탑승" 버튼을 눌러 시작하세요...');
+</script>
+
+</body>
+</html>
